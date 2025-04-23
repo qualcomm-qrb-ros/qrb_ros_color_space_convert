@@ -15,11 +15,11 @@ Qualcomm's smart devices, such as the RB3 Gen2, use NV12 as the default image co
 
 
 
-Please refer to the [QRB ROS Documentation](https://quic-qrb-ros.github.io/) for more documents.
+Please refer to the [QRB ROS Documentation](https://qualcomm-qrb-ros.github.io/) for more documents.
 
-- [Getting Started](https://quic-qrb-ros.github.io/getting_started/index.html)
-- [QRB ROS Packages](https://quic-qrb-ros.github.io/packages/index.html)
-- [Release Notes](https://quic-qrb-ros.github.io/release_notes/index.html)
+- [Getting Started](https://qualcomm-qrb-ros.github.io/getting_started/index.html)
+- [QRB ROS Packages](https://qualcomm-qrb-ros.github.io/packages/index.html)
+- [Release Notes](https://qualcomm-qrb-ros.github.io/release_notes/index.html)
 
 
 
@@ -32,13 +32,13 @@ We would love to have you as a part of the QRB ROS community. Whether you are he
 
 ## Documentation
 
-Please visit [QRB ROS Documentation](https://quic-qrb-ros.github.io/) for more details.
+Please visit [QRB ROS Documentation](https://qualcomm-qrb-ros.github.io/) for more details.
 
 ## Authors
 
 - **Vito Wang** - *Initial work* - [violet227 (Vito Wang)](https://github.com/violet227)
 
-See also the list of [Contributors to quic-qrb-ros/qrb_ros_color_space_convert](https://github.com/quic-qrb-ros/qrb_ros_color_space_convert/graphs/contributors) who participated in this project.
+See also the list of [Contributors to qualcomm-qrb-ros/qrb_ros_color_space_convert](https://github.com/qualcomm-qrb-ros/qrb_ros_color_space_convert/graphs/contributors) who participated in this project.
 
 ## License
 
