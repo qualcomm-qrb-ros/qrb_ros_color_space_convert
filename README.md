@@ -21,7 +21,7 @@ We provide two ways to use this package.
 <summary>Docker</summary>
 
 #### Setup
-Please follow this [steps](https://github.com/quic-qrb-ros/qrb_ros_docker?tab=readme-ov-file#quickstart) to setup docker env.
+Please follow this [steps](https://github.com/qualcomm-qrb-ros/qrb_ros_docker?tab=readme-ov-file#quickstart) to setup docker env.
 
 
 #### Build
@@ -112,7 +112,7 @@ We would love to have you as a part of the QRB ROS community. Whether you are he
 
 - **Vito Wang** - *Initial work* - [violet227 (Vito Wang)](https://github.com/violet227)
 
-See also the list of [Contributors to quic-qrb-ros/qrb_ros_color_space_convert](https://github.com/quic-qrb-ros/qrb_ros_color_space_convert/graphs/contributors) who participated in this project.
+See also the list of [Contributors to qualcomm-qrb-ros/qrb_ros_color_space_convert](https://github.com/qualcomm-qrb-ros/qrb_ros_color_space_convert/graphs/contributors) who participated in this project.
 
 ## License
 
