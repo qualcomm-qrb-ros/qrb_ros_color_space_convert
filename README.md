@@ -30,9 +30,9 @@ Please follow this [steps](https://github.com/qualcomm-qrb-ros/qrb_ros_docker?ta
 cd ~/qrb_ros_ws/src/qrb_ros_docker/scripts && \
 bash docker_run.sh
 
-git clone https://github.com/quic-qrb-ros/lib_mem_dmabuf.git
-git clone https://github.com/quic-qrb-ros/qrb_ros_transport.git
-git clone https://github.com/quic-qrb-ros/qrb_ros_color_space_convert.git
+git clone https://github.com/qualcomm-qrb-ros/lib_mem_dmabuf.git
+git clone https://github.com/qualcomm-qrb-ros/qrb_ros_transport.git
+git clone https://github.com/qualcomm-qrb-ros/qrb_ros_color_space_convert.git
 ```
 
 #### Run
@@ -52,7 +52,7 @@ ros2 launch qrb_ros_colorspace_convert colorspace_convert.launch.py 'conversion_
 <summary>QIRP-SDK</summary>
 
 #### Setup
-Please follow this [steps](https://quic-qrb-ros.github.io/main/getting_started/index.html) to setup qirp-sdk env.
+Please follow this [steps](https://qualcomm-qrb-ros.github.io/main/getting_started/index.html) to setup qirp-sdk env.
 
 
 #### Build
@@ -62,9 +62,9 @@ Please follow this [steps](https://quic-qrb-ros.github.io/main/getting_started/i
 mkdir -p <qirp_decompressed_workspace>/qirp-sdk/ros_ws
 cd <qirp_decompressed_workspace>/qirp-sdk/ros_ws
 
-git clone https://github.com/quic-qrb-ros/lib_mem_dmabuf.git
-git clone https://github.com/quic-qrb-ros/qrb_ros_transport.git
-git clone https://github.com/quic-qrb-ros/qrb_ros_color_space_convert.git
+git clone https://github.com/qualcomm-qrb-ros/lib_mem_dmabuf.git
+git clone https://github.com/qualcomm-qrb-ros/qrb_ros_transport.git
+git clone https://github.com/qualcomm-qrb-ros/qrb_ros_color_space_convert.git
 
 
 # build
@@ -92,7 +92,7 @@ ros2 launch qrb_ros_colorspace_convert colorspace_convert.launch.py 'conversion_
 <br>
 
 
-You can get more details from [here](https://quic-qrb-ros.github.io/main/index.html).
+You can get more details from [here](https://qualcomm-qrb-ros.github.io/main/index.html).
 
 ## Supported Types
 
