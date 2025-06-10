@@ -1,5 +1,9 @@
 # QRB Color Space Conversion ROS Node
 
+> ⚠️ **Please Note**
+> The source code for this project has been moved to https://github.com/qualcomm-qrb-ros/qrb_ros_samples/tree/main/platform/sample_colorspace_convert.
+> This repository is scheduled to be refactored. 
+
 ## Overview
 
 Qualcomm's smart devices, such as the RB3 Gen2, use NV12 as the default image color space conversion format. Generally, the more common color space format is RGB888. To embrace open source and facilitate developers in converting between these two formats, we have developed the color space conversion ROS node. The feature as follows:
