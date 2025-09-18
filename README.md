@@ -244,7 +244,7 @@ sudo apt install ros-jazzy-qrb-ros-transport-imu-type
 sudo apt install ros-jazzy-pcl-conversions
 sudo apt install qcom-adreno-dev
 sudo apt install weston
-sudo apt install weston-autostart
+sudo apt install weston-autostart # reboot is required for Weston to start automatically
 ```
 Download the source code and build with colcon
 ```
