@@ -22,6 +22,7 @@ The `qrb-ros-color-space-convert` sample application implements the following:
 - Supports `dmabuf` fd as input and output
 - Input and output image receive and send with QRB ROS transport
 - Hardware acceleration with GPU by OpenGL ES
+- Also support the color space conversion with CPU by OpenCV
 
 <div align="center">
   <img src="./docs/assets/architecture.png" alt="architecture">
@@ -30,7 +31,7 @@ The `qrb-ros-color-space-convert` sample application implements the following:
 
 - The [`qrb_ros_color_space_convert`](https://github.com/qualcomm-qrb-ros/qrb_ros_color_space_convert) is a ROS2 package that includes two modules: nv12_to_rgb8 and rgb8_to_nv12. You can configure the conversion direction via parameter settings, enabling flexible bidirectional color space conversion.
 
-- The [`qrb_colorspace_convert_lib`](https://github.com/qualcomm-qrb-ros/qrb_ros_color_space_convert/tree/main/qrb_colorspace_convert_lib) leverages the OpenGLES API to accelerate color space conversion using GPU.
+- The [`qrb_colorspace_convert_lib`](https://github.com/qualcomm-qrb-ros/qrb_ros_color_space_convert/tree/main/qrb_colorspace_convert_lib) leverages the OpenGLES API to accelerate color space conversion using GPU, and also supports OpenCV for CPU-based color space conversion.
 
 - The [`qrb_ros_transport`](https://github.com/qualcomm-qrb-ros/qrb_ros_transport) is a ROS 2 package, it supports zero-copy image transport with Linux DMA buffer and implements ROS type adaption, make it compatible with both intra- and inter-process communication.
 
@@ -101,6 +102,8 @@ The `qrb-ros-color-space-convert` sample application implements the following:
 
 ### 🔹 `qrb_colorspace_convert_lib` APIs
 
+#### GPU Backend (by OpenGLES)
+
 <table>
   <tr>
     <th>Function</th>
@@ -108,24 +111,58 @@ The `qrb-ros-color-space-convert` sample application implements the following:
     <th>Description</th>
   </tr>
   <tr>
-    <td>bool nv12_to_rgb8(int in_fd, int out_fd, int width, int height)</td>
+    <td>bool nv12_to_rgb8_opengles(int in_fd, int out_fd, int width, int height)</td>
     <td>
       in_fd – input DMA_BUF file descriptor<br>
       out_fd – output DMA_BUF file descriptor<br>
       width – image width, must align with GPU supported size<br>
       height – image height, must align with GPU supported size
     </td>
-    <td>Convert NV12 to RGB8</td>
+    <td>Convert NV12 to RGB8 using OpenGL ES</td>
   </tr>
   <tr>
-    <td>bool rgb8_to_nv12(int in_fd, int out_fd, int width, int height)</td>
+    <td>bool rgb8_to_nv12_opengles(int in_fd, int out_fd, int width, int height)</td>
     <td>
       in_fd – input DMA_BUF file descriptor<br>
       out_fd – output DMA_BUF file descriptor<br>
       width – image width, must align with GPU supported size<br>
       height – image height, must align with GPU supported size
     </td>
-    <td>Convert RGB8 to NV12</td>
+    <td>Convert RGB8 to NV12 using OpenGL ES</td>
+  </tr>
+</table>
+
+#### CPU Backend (by OpenCV)
+
+<table>
+  <tr>
+    <th>Function</th>
+    <th>Parameters</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td>bool nv12_to_rgb8_opencv(const std::shared_ptr&lt;DmaBuffer&gt;&amp; in_buf, const std::shared_ptr&lt;DmaBuffer&gt;&amp; out_buf, int width, int height, int stride, int slice)</td>
+    <td>
+      in_buf – input DmaBuffer object<br>
+      out_buf – output DmaBuffer object<br>
+      width – image width<br>
+      height – image height<br>
+      stride – aligned width for memory layout<br>
+      slice – aligned height for memory layout
+    </td>
+    <td>Convert NV12 to RGB8 using OpenCV</td>
+  </tr>
+  <tr>
+    <td>bool rgb8_to_nv12_opencv(const std::shared_ptr&lt;DmaBuffer&gt;&amp; in_buf, const std::shared_ptr&lt;DmaBuffer&gt;&amp; out_buf, int width, int height, int stride, int slice)</td>
+    <td>
+      in_buf – input DmaBuffer object<br>
+      out_buf – output DmaBuffer object<br>
+      width – image width<br>
+      height – image height<br>
+      stride – aligned width for memory layout<br>
+      slice – aligned height for memory layout
+    </td>
+    <td>Convert RGB8 to NV12 using OpenCV</td>
   </tr>
 </table>
 
@@ -152,7 +189,9 @@ The `qrb-ros-color-space-convert` sample application implements the following:
 > [!IMPORTANT]
 > **PREREQUISITES**: The following steps need to be run on **Qualcomm Ubuntu** and **ROS Jazzy**.<br>
 > - **Qualcomm Ubuntu**:
-> Reference [Install Ubuntu on Qualcomm IoT Platforms](https://ubuntu.com/download/qualcomm-iot) to install Ubuntu Server(Ubuntu Desktop is not supported because Weston is not available)<br>
+> Reference [Install Ubuntu on Qualcomm IoT Platforms](https://ubuntu.com/download/qualcomm-iot) to install Ubuntu<br>
+>   - GPU backend only support on Ubuntu Server, Ubuntu Desktop is not supported because Weston is not available
+>   - CPU backend support on both Ubuntu Server and Ubuntu Desktop
 > - **ROS Jazzy**: [Install ROS Jazzy](https://docs.ros.org/en/jazzy/index.html) to setup environment. <br>
 > - For Qualcomm Linux, please check out the [Qualcomm Intelligent Robotics Product SDK](https://docs.qualcomm.com/bundle/publicresource/topics/80-70018-265/introduction_1.html?vproduct=1601111740013072&version=1.4&facet=Qualcomm%20Intelligent%20Robotics%20Product%20(QIRP)%20SDK) documents.
 
@@ -189,6 +228,9 @@ ros2 launch qrb_ros_colorspace_convert colorspace_convert.launch.py 'conversion_
 ```
 
 The output for these commands:
+
+<details>
+<summary><b>GPU backend</b></summary>
 
 ```bash
 [INFO] [launch]: All log files can be found below /opt/.ros/log/1980-01-06-00-15-37-706654-qcs6490-rb3gen2-vision-kit-4007
@@ -228,6 +270,29 @@ The output for these commands:
 ...
 ```
 
+</details>
+
+<details>
+<summary><b>CPU backend</b></summary>
+
+```bash
+[INFO] [launch]: All log files can be found below /home/ubuntu/.ros/log/2025-11-24-02-06-58-715780-ubuntu-3417
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [component_container-1]: process started with pid [3434]
+[component_container-1] [INFO] [1763950019.278232890] [component_colorconvert_container]: Load Library: /home/ubuntu/rospro/install/qrb_ros_colorspace_convert/lib/libqrb_ros_colorspace_convert.so
+[component_container-1] [INFO] [1763950019.324209212] [component_colorconvert_container]: Found class: rclcpp_components::NodeFactoryTemplate<qrb_ros::colorspace_convert::ColorspaceConvertNode>
+[component_container-1] [INFO] [1763950019.324346721] [component_colorconvert_container]: Instantiate class: rclcpp_components::NodeFactoryTemplate<qrb_ros::colorspace_convert::ColorspaceConvertNode>
+[INFO] [launch_ros.actions.load_composable_nodes]: Loaded node '/colorspace_convert_node' in container '/component_colorconvert_container'
+[component_container-1] [INFO] [1763950024.363088716] [colorspace_convert_node]: FPS: 30.2000, convert_latency: 0.1316 ms, total_latency: 0.2220 ms
+[component_container-1] [INFO] [1763950029.362970058] [colorspace_convert_node]: FPS: 30.0000, convert_latency: 0.1280 ms, total_latency: 0.2145 ms
+[component_container-1] [INFO] [1763950034.363018368] [colorspace_convert_node]: FPS: 30.0000, convert_latency: 0.1272 ms, total_latency: 0.2148 ms
+[component_container-1] [INFO] [1763950039.362972112] [colorspace_convert_node]: FPS: 30.0000, convert_latency: 0.1286 ms, total_latency: 0.2157 ms
+[component_container-1] [INFO] [1763950044.362963951] [colorspace_convert_node]: FPS: 30.0000, convert_latency: 0.1248 ms, total_latency: 0.2153 ms
+...
+```
+</details>
+
+
 Use the following command to confirm the color space conversion Result.
 
 ```bash
@@ -239,8 +304,12 @@ ros2 topic echo /image | grep "encoding"
 
 ## 👨‍💻 Build from Source
 
-Install dependencies
-```
+### Install dependencies
+
+<details>
+<summary><b>GPU backend</b></summary>
+
+```bash
 sudo apt install ros-jazzy-qrb-ros-transport-image-type
 sudo apt install ros-jazzy-qrb-ros-transport-point-cloud2-type
 sudo apt install ros-jazzy-qrb-ros-transport-imu-type
@@ -249,15 +318,37 @@ sudo apt install qcom-adreno-dev
 sudo apt install weston
 sudo apt install weston-autostart # reboot is required for Weston to start automatically
 ```
-Download the source code and build with colcon
-```
-source /opt/ros/jazzy/setup.bash
-git clone https://github.com/qualcomm-qrb-ros/qrb_ros_color_space_convert.git
-colcon build
+
+
+</details>
+
+<details>
+<summary><b>CPU backend</b></summary>
+
+```bash
+sudo apt install ros-jazzy-qrb-ros-transport-image-type
+sudo apt install ros-jazzy-qrb-ros-transport-point-cloud2-type
+sudo apt install ros-jazzy-qrb-ros-transport-imu-type
+sudo apt install ros-jazzy-pcl-conversions
+sudo apt install libopencv-dev libopencv-contrib-dev
 ```
 
-Run and debug
+</details>
+
+### Download the source code and build with colcon
+```bash
+source /opt/ros/jazzy/setup.bash
+git clone https://github.com/qualcomm-qrb-ros/qrb_ros_color_space_convert.git
+
+# GPU backend
+colcon build --cmake-args -DUSE_OPENCV_BACKEND=OFF
+
+# CPU backend
+colcon build --cmake-args -DUSE_OPENCV_BACKEND=ON
 ```
+
+### Run and debug
+```bash
 source install/setup.bash
 
 # convert color space from NV12 to RGB888
@@ -290,7 +381,7 @@ Thanks to all our contributors who have helped make this project better!
 
 <details>
 <summary>Do I need to do additional development for the pipeline?</summary><br>
-Yes, you’ll need to implement a ROS node to publish images, as well as a subscriber node to process the output from the color space conversion node.
+Yes, you'll need to implement a ROS node to publish images, as well as a subscriber node to process the output from the color space conversion node.
 </details>
 
 ## 📜 License
