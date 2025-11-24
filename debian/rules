@@ -23,8 +23,20 @@ endif
 
 DEB_HOST_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 
+ROS_CMAKE_ARGS_BASE := -DUSE_OPENCV_BACKEND=OFF
+ifneq (,$(findstring opencv_on,$(DEB_BUILD_PROFILES)))
+  ROS_CMAKE_ARGS_BASE := -DUSE_OPENCV_BACKEND=ON
+endif
+
+# Determine which package to build based on build profiles
+ifneq (,$(findstring opencv_on,$(DEB_BUILD_PROFILES)))
+  PACKAGE_ARG := --package=ros-jazzy-qrb-ros-colorspace-convert-opencv
+else
+  PACKAGE_ARG := --package=ros-jazzy-qrb-ros-colorspace-convert-opengles
+endif
+
 %:
-	dh $@ -v --buildsystem=cmake --builddirectory=.obj-$(DEB_HOST_GNU_TYPE)
+	dh $@ -v --buildsystem=cmake --builddirectory=.obj-$(DEB_HOST_GNU_TYPE) $(PACKAGE_ARG)
 
 override_dh_auto_configure:
 	# In case we're installing to a non-standard location, look for a setup.sh
@@ -35,7 +47,8 @@ override_dh_auto_configure:
 		-DCMAKE_INSTALL_PREFIX="/opt/ros/jazzy" \
 		-DAMENT_PREFIX_PATH="/opt/ros/jazzy" \
 		-DCMAKE_PREFIX_PATH="/opt/ros/jazzy" \
-		$(BUILD_TESTING_ARG)
+		$(BUILD_TESTING_ARG) \
+		$(ROS_CMAKE_ARGS_BASE)
 
 override_dh_auto_build:
 	# In case we're installing to a non-standard location, look for a setup.sh
@@ -57,7 +70,7 @@ override_dh_shlibdeps:
 	# in the install tree and source it.  It will set things like
 	# CMAKE_PREFIX_PATH, PKG_CONFIG_PATH, and PYTHONPATH.
 	if [ -f "/opt/ros/jazzy/setup.sh" ]; then . "/opt/ros/jazzy/setup.sh"; fi && \
-	dh_shlibdeps -l$(CURDIR)/debian/ros-jazzy-qrb-ros-colorspace-convert//opt/ros/jazzy/lib/:$(CURDIR)/debian/ros-jazzy-qrb-ros-colorspace-convert//opt/ros/jazzy/opt/qrb_ros_colorspace_convert/lib/
+	dh_shlibdeps $(PACKAGE_ARG)
 
 override_dh_auto_install:
 	# In case we're installing to a non-standard location, look for a setup.sh
