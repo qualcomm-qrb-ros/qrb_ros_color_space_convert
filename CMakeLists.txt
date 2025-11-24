@@ -9,36 +9,27 @@ endif()
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
-# add targets
-ament_auto_add_library(${PROJECT_NAME} SHARED
-  src/opengles_common.cpp
-  src/colorspace_convert.cpp
-)
+# backend option
+option(USE_OPENCV_BACKEND "Use OpenCV backend" OFF)
 
-target_link_libraries(${PROJECT_NAME}
-  EGL
-  GLESv2
-)
-
-if(BUILD_TESTING)
-
-  include_directories(test/include)
-
-  macro(add_test_module module)
-    add_executable(${module}_test
-      test/src/${module}_test.cpp
-    )
-    install(TARGETS
-      ${module}_test
-      DESTINATION bin/
-    )
-  endmacro(add_test_module)
-
-  add_test_module(opengles)
-  target_link_libraries(opengles_test
-    ${PROJECT_NAME}
+if(USE_OPENCV_BACKEND)
+  find_package(OpenCV REQUIRED core imgproc highgui)
+  ament_auto_add_library(${PROJECT_NAME} SHARED
+    src/colorspace_convert.cpp
+  )
+  target_compile_definitions(${PROJECT_NAME} PRIVATE USE_OPENCV_BACKEND)
+  target_include_directories(${PROJECT_NAME} PRIVATE ${OpenCV_INCLUDE_DIRS})
+  target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
+else()
+  ament_auto_add_library(${PROJECT_NAME} SHARED
+    src/opengles_common.cpp
+    src/colorspace_convert.cpp
   )
 
+  target_link_libraries(${PROJECT_NAME}
+    EGL
+    GLESv2
+  )
 endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION 1)

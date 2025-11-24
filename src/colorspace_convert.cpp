@@ -3,90 +3,143 @@
 
 #include "qrb_colorspace_convert_lib/colorspace_convert.hpp"
 
-#include <drm/drm_fourcc.h>
-
+#include <cstring>
 #include <iostream>
 
 namespace qrb::colorspace_convert_lib
 {
-OpenGLESAccelerator::~OpenGLESAccelerator()
+
+ConvertAccelerator::~ConvertAccelerator()
 {
+#ifndef USE_OPENCV_BACKEND
   if (initialized_) {
     egl_deinit();
   }
+#endif
 }
 
-bool OpenGLESAccelerator::egl_init()
+#ifdef USE_OPENCV_BACKEND
+
+// OpenCV implementation - uses DmaBuffer objects directly
+bool ConvertAccelerator::nv12_to_rgb8_opencv(
+    const std::shared_ptr<lib_mem_dmabuf::DmaBuffer> & in_buf,
+    const std::shared_ptr<lib_mem_dmabuf::DmaBuffer> & out_buf,
+    int width,
+    int height,
+    int stride,
+    int slice)
 {
-  display_ = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-  if (display_ == EGL_NO_DISPLAY) {
-    std::cerr << "Failed to get default display" << std::endl;
+  if (!in_buf->map() || !in_buf->sync_start()) {
+    std::cerr << "Input dmabuf mmap failed" << std::endl;
     return false;
   }
 
-  EGLint major = 0, minor = 0;
-  if (!eglInitialize(display_, &major, &minor)) {
-    std::cerr << "egl init failed" << std::endl;
+  if (!out_buf->map() || !out_buf->sync_start()) {
+    std::cerr << "Output dmabuf mmap failed" << std::endl;
+    in_buf->sync_end();
+    in_buf->unmap();
     return false;
   }
 
-  // Set the rendering API in current thread.
-  if (!eglBindAPI(EGL_OPENGL_ES_API)) {
-    std::cerr << "Failed to set rendering API: " << std::hex << eglGetError() << std::endl;
-    return false;
-  }
+  try {
+    // Create OpenCV Mat for NV12 input (Y plane + UV plane)
+    cv::Mat yuv420_image(slice + slice / 2, stride, CV_8UC1, (char *)in_buf->addr());
 
-  const EGLint attribs[] = { EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE };
+    // Create OpenCV Mat for RGB8 output
+    cv::Mat rgb_image(slice, stride, CV_8UC3, (char *)out_buf->addr());
 
-  // Create EGL rendering context.
-  auto context_ = eglCreateContext(display_, EGL_NO_CONFIG_KHR, EGL_NO_CONTEXT, attribs);
+    // Convert NV12 to RGB
+    cv::cvtColor(yuv420_image, rgb_image, cv::COLOR_YUV2RGB_NV12);
 
-  if (context_ == EGL_NO_CONTEXT) {
-    std::cerr << "Failed to create EGL context: " << std::hex << eglGetError() << std::endl;
-    return false;
-  }
+    in_buf->sync_end();
+    in_buf->unmap();
+    out_buf->sync_end();
+    out_buf->unmap();
 
-  /// connect the context to the surface
-  if (!eglMakeCurrent(display_, EGL_NO_SURFACE, EGL_NO_SURFACE, context_)) {
-    std::cerr << "Failed to create EGL context: " << std::hex << eglGetError() << std::endl;
-    eglDestroyContext(display_, context_);
-    context_ = EGL_NO_CONTEXT;
-    return false;
-  }
-
-  initialized_ = true;
-  return true;
-}
-
-bool OpenGLESAccelerator::egl_deinit()
-{
-  if (display_ == EGL_NO_DISPLAY) {
     return true;
+  } catch (const cv::Exception & e) {
+    std::cerr << "OpenCV error in NV12 to RGB8 conversion: " << e.what() << std::endl;
+    in_buf->sync_end();
+    in_buf->unmap();
+    out_buf->sync_end();
+    out_buf->unmap();
+    return false;
   }
+}
 
-  if (context_ != EGL_NO_CONTEXT) {
-    if (!eglMakeCurrent(display_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)) {
-      std::cerr << "Fail release EGL context: " << std::hex << eglGetError() << std::endl;
-      return false;
-    }
-    if (!eglDestroyContext(display_, context_)) {
-      std::cerr << "Fail destroy EGL context: " << std::hex << eglGetError() << std::endl;
-      return false;
-    }
-    context_ = EGL_NO_CONTEXT;
-  }
-
-  if (eglTerminate(display_) == EGL_FALSE) {
-    std::cerr << "Fail to terminate EGL: " << std::hex << eglGetError() << std::endl;
+bool ConvertAccelerator::rgb8_to_nv12_opencv(
+    const std::shared_ptr<lib_mem_dmabuf::DmaBuffer> & in_buf,
+    const std::shared_ptr<lib_mem_dmabuf::DmaBuffer> & out_buf,
+    int width,
+    int height,
+    int stride,
+    int slice)
+{
+  if (!in_buf->map() || !in_buf->sync_start()) {
+    std::cerr << "Input dmabuf mmap failed" << std::endl;
     return false;
   }
 
-  display_ = EGL_NO_DISPLAY;
-  initialized_ = false;
-  return true;
+  if (!out_buf->map() || !out_buf->sync_start()) {
+    std::cerr << "Output dmabuf mmap failed" << std::endl;
+    in_buf->sync_end();
+    in_buf->unmap();
+    return false;
+  }
+
+  try {
+    // Create OpenCV Mat for RGB8 input
+    cv::Mat rgb_image(slice, stride, CV_8UC3, (char *)in_buf->addr());
+
+    // Convert RGB to YUV420 first
+    cv::Mat yuv_i420;
+    cv::cvtColor(rgb_image, yuv_i420, cv::COLOR_RGB2YUV_I420);
+
+    // Now we need to convert I420 (YUV420P) to NV12 format
+    // I420 format: Y plane + U plane + V plane (planar)
+    // NV12 format: Y plane + interleaved UV plane
+
+    uint8_t * nv12_data = (uint8_t *)out_buf->addr();
+    uint8_t * i420_data = yuv_i420.data;
+
+    int y_size = stride * slice;
+    int uv_size = stride * slice / 4;
+
+    // Copy Y plane directly
+    memcpy(nv12_data, i420_data, y_size);
+
+    // Interleave U and V planes to create UV plane for NV12
+    uint8_t * u_plane = i420_data + y_size;
+    uint8_t * v_plane = i420_data + y_size + uv_size;
+    uint8_t * uv_plane = nv12_data + y_size;
+
+    for (int i = 0; i < uv_size; i++) {
+      uv_plane[i * 2] = u_plane[i];      // U
+      uv_plane[i * 2 + 1] = v_plane[i];  // V
+    }
+
+    in_buf->sync_end();
+    in_buf->unmap();
+    out_buf->sync_end();
+    out_buf->unmap();
+
+    return true;
+  } catch (const cv::Exception & e) {
+    std::cerr << "OpenCV error in RGB8 to NV12 conversion: " << e.what() << std::endl;
+    in_buf->sync_end();
+    in_buf->unmap();
+    out_buf->sync_end();
+    out_buf->unmap();
+    return false;
+  }
 }
 
-bool OpenGLESAccelerator::nv12_to_rgb8(int in_fd, int out_fd, int width, int height)
+#endif
+
+#ifndef USE_OPENCV_BACKEND
+
+// OpenGL ES implementation - only available when OpenCV backend is not enabled
+bool ConvertAccelerator::nv12_to_rgb8_opengles(int in_fd, int out_fd, int width, int height)
 {
   if (!initialized_ && !egl_init()) {
     std::cerr << "EGL init failed" << std::endl;
@@ -212,7 +265,7 @@ bool OpenGLESAccelerator::nv12_to_rgb8(int in_fd, int out_fd, int width, int hei
   return true;
 }
 
-bool OpenGLESAccelerator::rgb8_to_nv12(int in_fd, int out_fd, int width, int height)
+bool ConvertAccelerator::rgb8_to_nv12_opengles(int in_fd, int out_fd, int width, int height)
 {
   if (!initialized_ && !egl_init()) {
     std::cerr << "EGL init failed" << std::endl;
@@ -339,5 +392,77 @@ bool OpenGLESAccelerator::rgb8_to_nv12(int in_fd, int out_fd, int width, int hei
 
   return true;
 }
+
+bool ConvertAccelerator::egl_init()
+{
+  display_ = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  if (display_ == EGL_NO_DISPLAY) {
+    std::cerr << "Failed to get default display" << std::endl;
+    return false;
+  }
+
+  EGLint major = 0, minor = 0;
+  if (!eglInitialize(display_, &major, &minor)) {
+    std::cerr << "egl init failed" << std::endl;
+    return false;
+  }
+
+  // Set the rendering API in current thread.
+  if (!eglBindAPI(EGL_OPENGL_ES_API)) {
+    std::cerr << "Failed to set rendering API: " << std::hex << eglGetError() << std::endl;
+    return false;
+  }
+
+  const EGLint attribs[] = { EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE };
+
+  // Create EGL rendering context.
+  auto context_ = eglCreateContext(display_, EGL_NO_CONFIG_KHR, EGL_NO_CONTEXT, attribs);
+
+  if (context_ == EGL_NO_CONTEXT) {
+    std::cerr << "Failed to create EGL context: " << std::hex << eglGetError() << std::endl;
+    return false;
+  }
+
+  /// connect the context to the surface
+  if (!eglMakeCurrent(display_, EGL_NO_SURFACE, EGL_NO_SURFACE, context_)) {
+    std::cerr << "Failed to create EGL context: " << std::hex << eglGetError() << std::endl;
+    eglDestroyContext(display_, context_);
+    context_ = EGL_NO_CONTEXT;
+    return false;
+  }
+
+  initialized_ = true;
+  return true;
+}
+
+bool ConvertAccelerator::egl_deinit()
+{
+  if (display_ == EGL_NO_DISPLAY) {
+    return true;
+  }
+
+  if (context_ != EGL_NO_CONTEXT) {
+    if (!eglMakeCurrent(display_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)) {
+      std::cerr << "Fail release EGL context: " << std::hex << eglGetError() << std::endl;
+      return false;
+    }
+    if (!eglDestroyContext(display_, context_)) {
+      std::cerr << "Fail destroy EGL context: " << std::hex << eglGetError() << std::endl;
+      return false;
+    }
+    context_ = EGL_NO_CONTEXT;
+  }
+
+  if (eglTerminate(display_) == EGL_FALSE) {
+    std::cerr << "Fail to terminate EGL: " << std::hex << eglGetError() << std::endl;
+    return false;
+  }
+
+  display_ = EGL_NO_DISPLAY;
+  initialized_ = false;
+  return true;
+}
+
+#endif
 
 }  // namespace qrb::colorspace_convert_lib
