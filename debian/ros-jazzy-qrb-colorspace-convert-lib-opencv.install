@@ -1,0 +1,6 @@
+opt/ros/jazzy/lib/libqrb_colorspace_convert_lib.so*
+opt/ros/jazzy/include/qrb_colorspace_convert_lib/
+opt/ros/jazzy/share/qrb_colorspace_convert_lib/
+opt/ros/jazzy/share/ament_index/resource_index/packages/qrb_colorspace_convert_lib
+opt/ros/jazzy/share/ament_index/resource_index/package_run_dependencies/qrb_colorspace_convert_lib
+opt/ros/jazzy/share/ament_index/resource_index/parent_prefix_path/qrb_colorspace_convert_lib

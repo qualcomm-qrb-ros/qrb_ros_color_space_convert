@@ -2,11 +2,43 @@ Source: ros-jazzy-qrb-colorspace-convert-lib
 Section: misc
 Priority: optional
 Maintainer: Vito Wang <wantao@qti.qualcomm.com>
-Build-Depends: debhelper-compat (=13), ros-jazzy-ament-cmake-auto, ros-jazzy-ament-lint-auto <!nocheck>, ros-jazzy-ament-lint-common <!nocheck>, ros-jazzy-rclcpp, ros-jazzy-rclcpp-components, ros-jazzy-sensor-msgs, ros-jazzy-std-msgs, qcom-adreno-dev
+Build-Depends: debhelper-compat (=13),
+               ros-jazzy-ament-cmake-auto,
+               ros-jazzy-ament-lint-auto <!nocheck>,
+               ros-jazzy-ament-lint-common <!nocheck>,
+               ros-jazzy-rclcpp,
+               ros-jazzy-rclcpp-components,
+               ros-jazzy-sensor-msgs,
+               ros-jazzy-std-msgs,
+               qcom-adreno-dev <!opencv_on>,
+               libopencv-dev <opencv_on>
 Homepage: 
 Standards-Version: 3.9.2
 
-Package: ros-jazzy-qrb-colorspace-convert-lib
+Package: ros-jazzy-qrb-colorspace-convert-lib-opencv
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, ros-jazzy-rclcpp, ros-jazzy-rclcpp-components, ros-jazzy-sensor-msgs, ros-jazzy-std-msgs, qcom-adreno-dev, weston, weston-autostart
-Description: Convert the color space of image between nv12 and rgb8
+Build-Profiles: opencv_on
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         ros-jazzy-rclcpp,
+         ros-jazzy-rclcpp-components,
+         ros-jazzy-sensor-msgs,
+         ros-jazzy-std-msgs,
+         libopencv-core-dev,
+         libopencv-imgproc-dev,
+         libopencv-highgui-dev
+Description: Convert the color space of image between nv12 and rgb8 using OpenCV backend
+
+Package: ros-jazzy-qrb-colorspace-convert-lib-opengles
+Architecture: any
+Build-Profiles: !opencv_on
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         ros-jazzy-rclcpp,
+         ros-jazzy-rclcpp-components,
+         ros-jazzy-sensor-msgs,
+         ros-jazzy-std-msgs,
+         qcom-adreno-dev,
+         weston,
+         weston-autostart
+Description: Convert the color space of image between nv12 and rgb8 using OpenGLES backend
