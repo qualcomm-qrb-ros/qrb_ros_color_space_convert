@@ -96,12 +96,26 @@ bool ColorspaceConvertNode::convert_core(const qrb_ros::transport::type::Image &
   if (latency_fps_test_)
     convert_start_time_ = std::chrono::steady_clock::now();
 
+  // Calculate stride and slice for the library
+  int stride = alignd_width;
+  int slice = alignd_height;
+
   if (type == "nv12_to_rgb8") {
     out_msg->encoding = "rgb8";
-    success = accelerator_.nv12_to_rgb8(input_fd, output_fd, alignd_width, alignd_height);
+#ifdef USE_OPENCV_BACKEND
+    success = accelerator_.nv12_to_rgb8_opencv(
+        handler.dmabuf, out_msg->dmabuf, handler.width, handler.height, stride, slice);
+#else
+    success = accelerator_.nv12_to_rgb8_opengles(input_fd, output_fd, alignd_width, alignd_height);
+#endif
   } else if (type == "rgb8_to_nv12") {
     out_msg->encoding = "nv12";
-    success = accelerator_.rgb8_to_nv12(input_fd, output_fd, alignd_width, alignd_height);
+#ifdef USE_OPENCV_BACKEND
+    success = accelerator_.rgb8_to_nv12_opencv(
+        handler.dmabuf, out_msg->dmabuf, handler.width, handler.height, stride, slice);
+#else
+    success = accelerator_.rgb8_to_nv12_opengles(input_fd, output_fd, alignd_width, alignd_height);
+#endif
   }
 
   if (latency_fps_test_)
