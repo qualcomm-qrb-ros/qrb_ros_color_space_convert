@@ -207,7 +207,11 @@ sudo apt update
 Install Debian package:
 
 ```bash
-sudo apt install ros-jazzy-qrb-ros-colorspace-convert
+# for GPU backend
+sudo apt install ros-jazzy-qrb-ros-colorspace-convert-opengles
+
+# for CPU backend
+sudo apt install ros-jazzy-qrb-ros-colorspace-convert-opencv
 ```
 
 ## 🚀 Usage
