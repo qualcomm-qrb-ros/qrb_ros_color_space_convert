@@ -3,6 +3,12 @@
 
 #include "qrb_colorspace_convert_lib/colorspace_convert.hpp"
 
+#include <fcntl.h>
+#include <linux/dma-buf.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <unistd.h>
+
 #include <cstring>
 #include <iostream>
 
@@ -20,76 +26,109 @@ ConvertAccelerator::~ConvertAccelerator()
 
 #ifdef USE_OPENCV_BACKEND
 
-// OpenCV implementation - uses DmaBuffer objects directly
-bool ConvertAccelerator::nv12_to_rgb8_opencv(
-    const std::shared_ptr<lib_mem_dmabuf::DmaBuffer> & in_buf,
-    const std::shared_ptr<lib_mem_dmabuf::DmaBuffer> & out_buf,
-    int width,
-    int height,
-    int stride,
-    int slice)
+static bool dmabuf_sync(int fd, bool start)
 {
-  if (!in_buf->map() || !in_buf->sync_start()) {
+  struct dma_buf_sync sync = { 0 };
+  sync.flags = DMA_BUF_SYNC_RW | (start ? DMA_BUF_SYNC_START : DMA_BUF_SYNC_END);
+  return ioctl(fd, DMA_BUF_IOCTL_SYNC, &sync) == 0;
+}
+
+// OpenCV implementation - uses DMA_BUF file descriptors directly
+bool ConvertAccelerator::nv12_to_rgb8_opencv(int in_fd, int out_fd, int width, int height)
+{
+  size_t in_size = width * height * 3 / 2;
+  size_t out_size = width * height * 3;
+
+  void * in_addr = mmap(NULL, in_size, PROT_READ | PROT_WRITE, MAP_SHARED, in_fd, 0);
+  if (in_addr == MAP_FAILED) {
     std::cerr << "Input dmabuf mmap failed" << std::endl;
     return false;
   }
 
-  if (!out_buf->map() || !out_buf->sync_start()) {
+  if (!dmabuf_sync(in_fd, true)) {
+    std::cerr << "Input dmabuf sync start failed" << std::endl;
+    munmap(in_addr, in_size);
+    return false;
+  }
+
+  void * out_addr = mmap(NULL, out_size, PROT_READ | PROT_WRITE, MAP_SHARED, out_fd, 0);
+  if (out_addr == MAP_FAILED) {
     std::cerr << "Output dmabuf mmap failed" << std::endl;
-    in_buf->sync_end();
-    in_buf->unmap();
+    dmabuf_sync(in_fd, false);
+    munmap(in_addr, in_size);
+    return false;
+  }
+
+  if (!dmabuf_sync(out_fd, true)) {
+    std::cerr << "Output dmabuf sync start failed" << std::endl;
+    munmap(out_addr, out_size);
+    dmabuf_sync(in_fd, false);
+    munmap(in_addr, in_size);
     return false;
   }
 
   try {
     // Create OpenCV Mat for NV12 input (Y plane + UV plane)
-    cv::Mat yuv420_image(slice + slice / 2, stride, CV_8UC1, (char *)in_buf->addr());
+    cv::Mat yuv420_image(height + height / 2, width, CV_8UC1, (char *)in_addr);
 
     // Create OpenCV Mat for RGB8 output
-    cv::Mat rgb_image(slice, stride, CV_8UC3, (char *)out_buf->addr());
+    cv::Mat rgb_image(height, width, CV_8UC3, (char *)out_addr);
 
     // Convert NV12 to RGB
     cv::cvtColor(yuv420_image, rgb_image, cv::COLOR_YUV2RGB_NV12);
 
-    in_buf->sync_end();
-    in_buf->unmap();
-    out_buf->sync_end();
-    out_buf->unmap();
+    dmabuf_sync(in_fd, false);
+    munmap(in_addr, in_size);
+    dmabuf_sync(out_fd, false);
+    munmap(out_addr, out_size);
 
     return true;
   } catch (const cv::Exception & e) {
     std::cerr << "OpenCV error in NV12 to RGB8 conversion: " << e.what() << std::endl;
-    in_buf->sync_end();
-    in_buf->unmap();
-    out_buf->sync_end();
-    out_buf->unmap();
+    dmabuf_sync(in_fd, false);
+    munmap(in_addr, in_size);
+    dmabuf_sync(out_fd, false);
+    munmap(out_addr, out_size);
     return false;
   }
 }
 
-bool ConvertAccelerator::rgb8_to_nv12_opencv(
-    const std::shared_ptr<lib_mem_dmabuf::DmaBuffer> & in_buf,
-    const std::shared_ptr<lib_mem_dmabuf::DmaBuffer> & out_buf,
-    int width,
-    int height,
-    int stride,
-    int slice)
+bool ConvertAccelerator::rgb8_to_nv12_opencv(int in_fd, int out_fd, int width, int height)
 {
-  if (!in_buf->map() || !in_buf->sync_start()) {
+  size_t in_size = width * height * 3;
+  size_t out_size = width * height * 3 / 2;
+
+  void * in_addr = mmap(NULL, in_size, PROT_READ | PROT_WRITE, MAP_SHARED, in_fd, 0);
+  if (in_addr == MAP_FAILED) {
     std::cerr << "Input dmabuf mmap failed" << std::endl;
     return false;
   }
 
-  if (!out_buf->map() || !out_buf->sync_start()) {
+  if (!dmabuf_sync(in_fd, true)) {
+    std::cerr << "Input dmabuf sync start failed" << std::endl;
+    munmap(in_addr, in_size);
+    return false;
+  }
+
+  void * out_addr = mmap(NULL, out_size, PROT_READ | PROT_WRITE, MAP_SHARED, out_fd, 0);
+  if (out_addr == MAP_FAILED) {
     std::cerr << "Output dmabuf mmap failed" << std::endl;
-    in_buf->sync_end();
-    in_buf->unmap();
+    dmabuf_sync(in_fd, false);
+    munmap(in_addr, in_size);
+    return false;
+  }
+
+  if (!dmabuf_sync(out_fd, true)) {
+    std::cerr << "Output dmabuf sync start failed" << std::endl;
+    munmap(out_addr, out_size);
+    dmabuf_sync(in_fd, false);
+    munmap(in_addr, in_size);
     return false;
   }
 
   try {
     // Create OpenCV Mat for RGB8 input
-    cv::Mat rgb_image(slice, stride, CV_8UC3, (char *)in_buf->addr());
+    cv::Mat rgb_image(height, width, CV_8UC3, (char *)in_addr);
 
     // Convert RGB to YUV420 first
     cv::Mat yuv_i420;
@@ -99,11 +138,11 @@ bool ConvertAccelerator::rgb8_to_nv12_opencv(
     // I420 format: Y plane + U plane + V plane (planar)
     // NV12 format: Y plane + interleaved UV plane
 
-    uint8_t * nv12_data = (uint8_t *)out_buf->addr();
+    uint8_t * nv12_data = (uint8_t *)out_addr;
     uint8_t * i420_data = yuv_i420.data;
 
-    int y_size = stride * slice;
-    int uv_size = stride * slice / 4;
+    int y_size = width * height;
+    int uv_size = width * height / 4;
 
     // Copy Y plane directly
     memcpy(nv12_data, i420_data, y_size);
@@ -118,18 +157,18 @@ bool ConvertAccelerator::rgb8_to_nv12_opencv(
       uv_plane[i * 2 + 1] = v_plane[i];  // V
     }
 
-    in_buf->sync_end();
-    in_buf->unmap();
-    out_buf->sync_end();
-    out_buf->unmap();
+    dmabuf_sync(in_fd, false);
+    munmap(in_addr, in_size);
+    dmabuf_sync(out_fd, false);
+    munmap(out_addr, out_size);
 
     return true;
   } catch (const cv::Exception & e) {
     std::cerr << "OpenCV error in RGB8 to NV12 conversion: " << e.what() << std::endl;
-    in_buf->sync_end();
-    in_buf->unmap();
-    out_buf->sync_end();
-    out_buf->unmap();
+    dmabuf_sync(in_fd, false);
+    munmap(in_addr, in_size);
+    dmabuf_sync(out_fd, false);
+    munmap(out_addr, out_size);
     return false;
   }
 }
