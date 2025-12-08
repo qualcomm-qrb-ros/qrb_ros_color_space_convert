@@ -7,8 +7,6 @@
 #ifdef USE_OPENCV_BACKEND
 #include <memory>
 #include <opencv4/opencv2/opencv.hpp>
-
-#include "lib_mem_dmabuf/dmabuf.hpp"
 #else
 #include <drm/drm_fourcc.h>
 
@@ -26,32 +24,18 @@ public:
   // Always declare both sets of methods, but only implement the active backend
 #ifdef USE_OPENCV_BACKEND
   /// Convert NV12 to RGB8 using OpenCV
-  /// @param in_buf input DmaBuffer
-  /// @param out_buf output DmaBuffer
+  /// @param in_fd input DMA_BUF file descriptor
+  /// @param out_fd output DMA_BUF file descriptor
   /// @param width image width
   /// @param height image height
-  /// @param stride aligned width for memory layout
-  /// @param slice aligned height for memory layout
-  bool nv12_to_rgb8_opencv(const std::shared_ptr<lib_mem_dmabuf::DmaBuffer> & in_buf,
-      const std::shared_ptr<lib_mem_dmabuf::DmaBuffer> & out_buf,
-      int width,
-      int height,
-      int stride,
-      int slice);
+  bool nv12_to_rgb8_opencv(int in_fd, int out_fd, int width, int height);
 
   /// Convert RGB8 to NV12 using OpenCV
-  /// @param in_buf input DmaBuffer
-  /// @param out_buf output DmaBuffer
+  /// @param in_fd input DMA_BUF file descriptor
+  /// @param out_fd output DMA_BUF file descriptor
   /// @param width image width
   /// @param height image height
-  /// @param stride aligned width for memory layout
-  /// @param slice aligned height for memory layout
-  bool rgb8_to_nv12_opencv(const std::shared_ptr<lib_mem_dmabuf::DmaBuffer> & in_buf,
-      const std::shared_ptr<lib_mem_dmabuf::DmaBuffer> & out_buf,
-      int width,
-      int height,
-      int stride,
-      int slice);
+  bool rgb8_to_nv12_opencv(int in_fd, int out_fd, int width, int height);
 #else
   /// Convert NV12 to RGB8 using OpenGL ES
   /// @param in_fd input DMA_BUF file descriptor

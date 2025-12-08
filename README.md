@@ -102,7 +102,8 @@ The `qrb-ros-color-space-convert` sample application implements the following:
 
 ### 🔹 `qrb_colorspace_convert_lib` APIs
 
-#### GPU Backend (by OpenGLES)
+<details>
+<summary><b>GPU Backend (by OpenGLES)</b></summary>
 
 <table>
   <tr>
@@ -132,7 +133,10 @@ The `qrb-ros-color-space-convert` sample application implements the following:
   </tr>
 </table>
 
-#### CPU Backend (by OpenCV)
+</details>
+
+<details>
+<summary><b>CPU Backend (by OpenCV)</b></summary>
 
 <table>
   <tr>
@@ -141,30 +145,28 @@ The `qrb-ros-color-space-convert` sample application implements the following:
     <th>Description</th>
   </tr>
   <tr>
-    <td>bool nv12_to_rgb8_opencv(const std::shared_ptr&lt;DmaBuffer&gt;&amp; in_buf, const std::shared_ptr&lt;DmaBuffer&gt;&amp; out_buf, int width, int height, int stride, int slice)</td>
+    <td>bool nv12_to_rgb8_opencv(int in_fd, int out_fd, int width, int height)</td>
     <td>
-      in_buf – input DmaBuffer object<br>
-      out_buf – output DmaBuffer object<br>
+      in_fd – input DMA_BUF file descriptor<br>
+      out_fd – output DMA_BUF file descriptor<br>
       width – image width<br>
-      height – image height<br>
-      stride – aligned width for memory layout<br>
-      slice – aligned height for memory layout
+      height – image height
     </td>
     <td>Convert NV12 to RGB8 using OpenCV</td>
   </tr>
   <tr>
-    <td>bool rgb8_to_nv12_opencv(const std::shared_ptr&lt;DmaBuffer&gt;&amp; in_buf, const std::shared_ptr&lt;DmaBuffer&gt;&amp; out_buf, int width, int height, int stride, int slice)</td>
+    <td>bool rgb8_to_nv12_opencv(int in_fd, int out_fd, int width, int height)</td>
     <td>
-      in_buf – input DmaBuffer object<br>
-      out_buf – output DmaBuffer object<br>
+      in_fd – input DMA_BUF file descriptor<br>
+      out_fd – output DMA_BUF file descriptor<br>
       width – image width<br>
-      height – image height<br>
-      stride – aligned width for memory layout<br>
-      slice – aligned height for memory layout
+      height – image height
     </td>
     <td>Convert RGB8 to NV12 using OpenCV</td>
   </tr>
 </table>
+
+</details>
 
 
 ## 🎯 Supported targets
