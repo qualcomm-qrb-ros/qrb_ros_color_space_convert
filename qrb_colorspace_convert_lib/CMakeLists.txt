@@ -27,8 +27,8 @@ else()
   )
 
   target_link_libraries(${PROJECT_NAME}
-    EGL
-    GLESv2
+    ${CMAKE_SYSROOT}/usr/lib/libEGL_adreno.so.1
+    ${CMAKE_SYSROOT}/usr/lib/libGLESv2_adreno.so.2
   )
 endif()
 
