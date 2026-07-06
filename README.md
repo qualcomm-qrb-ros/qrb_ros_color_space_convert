@@ -1,7 +1,6 @@
 <div align="center">
   <h1>QRB ROS Color Space Conversion</h1>
   <p align="center">
-    <img src="https://s7d1.scene7.com/is/image/dmqualcommprod/rb3gen2-dev-kits-hero-7" alt="Qualcomm QRB ROS" title="Qualcomm QRB ROS" />
   </p>
   <p>Performs conversion between NV12 and RGB888 formats</p>
 
@@ -141,12 +140,10 @@ The `qrb-ros-color-space-convert` sample application implements the following:
 <table >
   <tr>
     <th>Development Hardware</th>
-    <td>Qualcomm Dragonwing™ RB3 Gen2</td>
     <td>Qualcomm Dragonwing™ IQ-9075 EVK</td>
   </tr>
   <tr>
     <th>Hardware Overview</th>
-    <th><a href="https://www.qualcomm.com/developer/hardware/rb3-gen-2-development-kit"><img src="https://s7d1.scene7.com/is/image/dmqualcommprod/rb3-gen2-carousel?fmt=webp-alpha&qlt=85" width="180"/></a></th>
     <th><a href="https://www.qualcomm.com/products/internet-of-things/industrial-processors/iq9-series/iq-9075"><img src="https://s7d1.scene7.com/is/image/dmqualcommprod/dragonwing-IQ-9075-EVK?$QC_Responsive$&fmt=png-alpha" width="160"></a></th>
   </tr>
 </table>
@@ -202,7 +199,7 @@ The output for these commands:
 <summary><b>GPU backend</b></summary>
 
 ```bash
-[INFO] [launch]: All log files can be found below /opt/.ros/log/1980-01-06-00-15-37-706654-qcs6490-rb3gen2-vision-kit-4007
+[INFO] [launch]: All log files can be found below /opt/.ros/log/1980-01-06-00-15-37-706654-qcs9075-iq-9075-evk-4007
 [INFO] [launch]: Default logging verbosity is set to INFO
 [INFO] [component_container-1]: process started with pid [4027]
 [component_container-1] [INFO] [0315965738.248046048] [component_colorconvert_container]: Load Library: /usr/lib/libqrb_ros_colorspace_convert.so
