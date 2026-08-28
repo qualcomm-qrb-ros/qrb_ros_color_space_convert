@@ -176,6 +176,15 @@ Install Debian package:
 sudo apt install ros-jazzy-qrb-ros-colorspace-convert
 ```
 
+Confirm the EGL environment. Please confirm render exist in group, before test, if not, please follow below commands to set:
+```bash
+sudo usermod -aG render ubuntu
+reboot device and set below environment:
+export XDG_RUNTIME_DIR=/run/user/1000 && export WAYLAND_DISPLAY=wayland-1
+```
+validation EGL environment with command: "weston-simple-egl".
+
+
 ## 🚀 Usage
 You need to develop two ROS 2 nodes:
  - **Image Publisher Node**: This node is responsible for publishing image data to a ROS topic. It serves as the source of input images for the color space conversion process.
