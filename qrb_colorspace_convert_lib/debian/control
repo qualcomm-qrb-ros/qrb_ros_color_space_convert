@@ -10,7 +10,8 @@ Build-Depends: debhelper-compat (=13),
                ros-jazzy-rclcpp-components,
                ros-jazzy-sensor-msgs,
                ros-jazzy-std-msgs,
-	       libopencv-dev
+			   libopencv-dev,
+			   ros-jazzy-lib-mem-dmabuf
 Homepage: 
 Standards-Version: 3.9.2
 
