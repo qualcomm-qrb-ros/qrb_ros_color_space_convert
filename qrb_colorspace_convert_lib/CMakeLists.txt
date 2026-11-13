@@ -26,9 +26,12 @@ else()
     src/colorspace_convert.cpp
   )
 
+  set(QRB_EGL_LIBRARY "EGL" CACHE STRING "EGL library or target")
+  set(QRB_GLESV2_LIBRARY "GLESv2" CACHE STRING "OpenGL ES 2 library or target")
+
   target_link_libraries(${PROJECT_NAME}
-    EGL
-    GLESv2
+    ${QRB_EGL_LIBRARY}
+    ${QRB_GLESV2_LIBRARY}
   )
 endif()
 
